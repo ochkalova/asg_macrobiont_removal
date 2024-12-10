@@ -57,10 +57,11 @@ def collect_analyses_ids(record):
                     .text
                 )
                 response = requests.get(
-                    f"{ENA_URL}/portal/api/filereport?accession="
-                    f"{project_id}&result=analysis&fields=analysis_accession&"
-                    f"format=json&download=true&limit=0"
+                    f"https://www.ebi.ac.uk/ena/portal/api/search?result=analysis&"
+                    f"query=analysis_type=sequence_assembly%20AND%20assembly_type%3D%22primary%20metagenome%22%20AND%20study_accession%3D%22{project_id}%22&"
+                    f"format=json&fields=analysis_accession"
                 ).json()
+                
                 for erz in response:
                     tmp2[assmbl["accession"]].append(erz["analysis_accession"])
             tmp[assembly_type].append(tmp2)
