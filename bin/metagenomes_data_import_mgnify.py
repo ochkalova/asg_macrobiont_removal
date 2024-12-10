@@ -25,7 +25,8 @@ def main():
         print(
             f"Processing data: {round(i / len(data) * 100, 2)}%\r", end="", flush=True
         )
-        RESULTS.append(collect_analyses_ids(record["_source"]))
+        if "assemblies" in record["_source"] and len(record["_source"]["assemblies"]) > 0:
+            RESULTS.append(collect_analyses_ids(record["_source"]))
 
 
 def collect_analyses_ids(record):
