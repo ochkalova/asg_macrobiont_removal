@@ -9,9 +9,10 @@ import requests
 from lxml import etree
 from retry import retry
 
-ASG_URL = "https://portal.aquaticsymbiosisgenomics.org/api/data_portal_test"
+ASG_API_URL = "https://portal.aquaticsymbiosisgenomics.org/api/data_portal_test"
 ENA_URL = "https://www.ebi.ac.uk/ena"
-RESULTS = {}
+PAGE_LIMIT = 10
+DOWNLOAD_DIR = "."
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,61 +20,75 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()],
 )
 
+def main(target_accession):
+    logging.info(f"Collecting genome information from ASG portal")
+    
+    # Collect ASG portal data
+    data = collect_data_from_asg_portal()
+    
+    # Parse the collected data and collect relevant genome IDs
+    results = parse_records(data)
+    
+    # Find genomes related to the target accession
+    genomes_for_download = results[(target_accession,)]
+    
+    # Download the genomes
+    if genomes_for_download:
+        logging.info(f"Found {len(genomes_for_download)} genomes to download")
+        handle_fasta_download(genomes_for_download)
+    else:
+        logging.warning(f"No genomes found for target accession {target_accession}")
+    logging.info(f"Finished")
+
 def collect_data_from_asg_portal():
+    """Collect data from the ASG portal using paginated requests."""
     offset = 0
-    data = list()
-    # First request
-    response = requests.get(f"{ASG_URL}?offset={offset}&limit=10").json()
-    while offset + 10 <= response["count"]:
+    data = []
+    
+    while True:
+        url = f"{ASG_API_URL}?offset={offset}&limit={PAGE_LIMIT}"
+        response = requests.get(url).json()
         data.extend(response["results"])
-        offset += 10
-        response = requests.get(f"{ASG_URL}?offset={offset}&limit=10").json()
-    # Last request to collect remaining records
-    response = requests.get(f"{ASG_URL}?offset={offset}&limit=10").json()
-    data.extend(response["results"])
+        offset += PAGE_LIMIT
+        
+        if offset >= response["count"]:
+            break  # All data collected
+    
+    logging.info(f"Collected {len(data)} records from the ASG portal")
     return data
 
-def main(target_accession):
-    logging.info('Collecting info about deposited genomes in ASG portal')
-    data = collect_data_from_asg_portal()
-
-    logging.info('Parsing collected data')
-    for i, record in enumerate(data):
-        print(
-            f"Processing data: {round(i / len(data) * 100, 2)}%\r", end="", flush=True
-        )
-        record = record["_source"]
-        if ("assemblies" in record and len(record["assemblies"]) > 0) and ("metagenomes_assemblies" in record and len(record["metagenomes_assemblies"]) > 0):
-            RESULTS.update(collect_analyses_ids(record))
+def parse_records(data):
+    """Parse collected records to extract relevant genome information."""
+    results = {}
     
-    genomes_for_download = [
-        root_org_genome
-        for root_org_genome, accessions_set in RESULTS.items()
-        if target_accession in accessions_set
-    ]
-    genomes_for_download = [
-        accession
-        for accessions_set in genomes_for_download
-        for accession in accessions_set
-    ]
-    logging.info('Starting genome downloading')
-    for genome in genomes_for_download:
-        handle_fasta_download(genome, download_folder=".")
-
+    for i, record in enumerate(data):
+        logging.debug(f"Parsing record {i + 1}/{len(data)}")
+        source_record = record.get("_source", {})
+        
+        if source_record.get("assemblies") and source_record.get("metagenomes_assemblies"):
+            analyses_ids = collect_analyses_ids(source_record)
+            results.update(analyses_ids)
+    
+    logging.info(f"Parsed {len(results)} genome sets from the records")
+    return results
 
 def collect_analyses_ids(record):
-    """
-    Collect all analyses IDs (ERZs) from ES record.
-    record: ES entry
-    """
-    root_assemblies = tuple(assembly["accession"] for assembly in record["assemblies"])
-    tmp = {}
-    tmp[root_assemblies] = set()
-    for assmbl in record["metagenomes_assemblies"]:
-        # Identify project ID
-        response = requests.get(
-            f"{ENA_URL}/browser/api/xml/{assmbl['accession']}"
-        )
+    """Collect analysis IDs (ERZs) from a single record."""
+    host_assemblies = [assembly["accession"] for assembly in record["assemblies"]]
+    primary_metagenomes = set()
+    
+    for metagenome in record["metagenomes_assemblies"]:
+        project_id = get_project_id_from_ena(metagenome["accession"])
+        primary_metagenomes.update(get_primary_assemblies_from_project_id(project_id))
+    
+    return {tuple(primary_metagenomes): host_assemblies}
+
+def get_project_id_from_ena(accession):
+    """Retrieve project ID from ENA using accession."""
+    url = f"{ENA_URL}/browser/api/xml/{accession}"
+    response = requests.get(url)
+    
+    try:
         root = etree.fromstring(response.content)
         project_id = (
             root.find("ASSEMBLY")
@@ -82,27 +97,36 @@ def collect_analyses_ids(record):
             .find("PRIMARY_ID")
             .text
         )
-        # Identify related primary assemblies
-        response = requests.get(
-            f"https://www.ebi.ac.uk/ena/portal/api/search?result=analysis&"
-            f"query=analysis_type=sequence_assembly%20AND%20assembly_type%3D%22primary%20metagenome%22%20AND%20study_accession%3D%22{project_id}%22&"
-            f"format=json&fields=analysis_accession"
-        ).json()
-        
-        erz_list = set([line["analysis_accession"] for line in response])
-        tmp[root_assemblies].update(erz_list)
-    return tmp
+        return project_id
+    except etree.XMLSyntaxError as e:
+        logging.error(f"Error parsing XML for accession {accession}: {e}")
+        raise
 
-
-def handle_fasta_download(accession, download_folder):
-    outpath = os.path.join(download_folder, f'{accession}.fa.gz')
-
-    if not os.path.exists(download_folder):
-        os.makedirs(download_folder)
-        logging.debug(f"Directory {download_folder} is created")
+def get_primary_assemblies_from_project_id(accession):
+    api_endpoint = "https://www.ebi.ac.uk/ena/portal/api/search"
+    query = {
+        'result': 'analysis',
+        'query': f'analysis_type=sequence_assembly AND assembly_type="primary metagenome" AND study_accession="{accession}"',
+        'format': 'json',
+        'fields': 'analysis_accession'
+    }
+    response = requests.get(api_endpoint, params=urllib.parse.urlencode(query))
+    primary_assemblies = {record["analysis_accession"] for record in response.json()}
     
-    download_from_ENA_API(accession, outpath)
+    logging.debug(f"Found {len(primary_assemblies)} 'primary assembly' type analysis accessions for project {accession}")
+    return primary_assemblies
 
+def handle_fasta_download(accessions):
+    if not os.path.exists(DOWNLOAD_DIR):
+        os.makedirs(DOWNLOAD_DIR)
+        logging.debug(f"Directory {DOWNLOAD_DIR} is created")
+    for accession in accessions:
+        outpath = os.path.join(DOWNLOAD_DIR, f'{accession}.fa.gz')
+        if os.path.exists(outpath) and os.path.getsize(outpath) > 20:
+            logging.info(f"File {outpath} already exists, skipping download.")
+            return
+        download_from_ENA_API(accession, outpath)
+        
 @retry(tries=7, delay=15, backoff=2) 
 def download_from_ENA_API(accession: str, outpath: str) -> str:
     api_endpoint = f"https://www.ebi.ac.uk/ena/browser/api/fasta/{accession}"
@@ -124,13 +148,10 @@ def download_from_ENA_API(accession: str, outpath: str) -> str:
     os.remove(outpath)
     raise ValueError(f"Downloaded file {outpath} has zero size")
 
-
 def parse_args():
-    parser = argparse.ArgumentParser(description='Find and download macro organism (host) genome assemblies for a primary metagenome from ASG project')
-    parser.add_argument('target_accession',
-                        help='Primary metagenome accession')
+    parser = argparse.ArgumentParser(description='Download macro organism genomes for a primary metagenome from ASG project.')
+    parser.add_argument('target_accession', help='Primary metagenome accession')
     return parser.parse_args()
-
 
 if __name__ == '__main__':
     args = parse_args()
