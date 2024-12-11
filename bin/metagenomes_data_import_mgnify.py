@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-from lxml import etree
 import logging
 import os
 import urllib
 
-from retry import retry
 import requests
+from lxml import etree
+from retry import retry
 
 ASG_URL = "https://portal.aquaticsymbiosisgenomics.org/api/data_portal_test"
 ENA_URL = "https://www.ebi.ac.uk/ena"
