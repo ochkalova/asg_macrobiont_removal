@@ -10,7 +10,6 @@ from lxml import etree
 from retry import retry
 
 ASG_API_URL = "https://portal.aquaticsymbiosisgenomics.org/api/data_portal_test"
-ENA_URL = "https://www.ebi.ac.uk/ena"
 PAGE_LIMIT = 10
 DOWNLOAD_DIR = "."
 
@@ -65,7 +64,7 @@ def parse_records(data):
         logging.debug(f"Parsing record {i + 1}/{len(data)}")
         source_record = record.get("_source", {})
         
-        if source_record.get("assemblies") and source_record.get("metagenomes_assemblies"):
+        if source_record.get("assemblies") and source_record.get("metagenomes_analyses"):
             analyses_ids = collect_analyses_ids(source_record)
             results.update(analyses_ids)
     
@@ -75,46 +74,8 @@ def parse_records(data):
 def collect_analyses_ids(record):
     """Collect analysis IDs (ERZs) from a single record."""
     host_assemblies = [assembly["accession"] for assembly in record["assemblies"]]
-    primary_metagenomes = set()
-    
-    for metagenome in record["metagenomes_assemblies"]:
-        project_id = get_project_id_from_ena(metagenome["accession"])
-        primary_metagenomes.update(get_primary_assemblies_from_project_id(project_id))
-    
+    primary_metagenomes = [analysis["analysis_accession"] for analysis in record["metagenomes_analyses"] if analysis["assembly_type"] == "primary metagenome"]
     return {tuple(primary_metagenomes): host_assemblies}
-
-def get_project_id_from_ena(accession):
-    """Retrieve project ID from ENA using accession."""
-    url = f"{ENA_URL}/browser/api/xml/{accession}"
-    response = requests.get(url)
-    
-    try:
-        root = etree.fromstring(response.content)
-        project_id = (
-            root.find("ASSEMBLY")
-            .find("STUDY_REF")
-            .find("IDENTIFIERS")
-            .find("PRIMARY_ID")
-            .text
-        )
-        return project_id
-    except etree.XMLSyntaxError as e:
-        logging.error(f"Error parsing XML for accession {accession}: {e}")
-        raise
-
-def get_primary_assemblies_from_project_id(accession):
-    api_endpoint = "https://www.ebi.ac.uk/ena/portal/api/search"
-    query = {
-        'result': 'analysis',
-        'query': f'analysis_type=sequence_assembly AND assembly_type="primary metagenome" AND study_accession="{accession}"',
-        'format': 'json',
-        'fields': 'analysis_accession'
-    }
-    response = requests.get(api_endpoint, params=urllib.parse.urlencode(query))
-    primary_assemblies = {record["analysis_accession"] for record in response.json()}
-    
-    logging.debug(f"Found {len(primary_assemblies)} 'primary assembly' type analysis accessions for project {accession}")
-    return primary_assemblies
 
 def handle_fasta_download(accessions):
     if not os.path.exists(DOWNLOAD_DIR):
