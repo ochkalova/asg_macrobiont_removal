@@ -25,10 +25,10 @@ def main(target_accession):
     data = collect_data_from_asg_portal()
     
     # Parse the collected data and collect relevant genome IDs
-    results = parse_records(data)
+    host2metagenome = parse_records(data)
     
     # Find genomes related to the target accession
-    genomes_for_download = results[(target_accession,)]
+    genomes_for_download = host2metagenome[(target_accession,)]
     
     # Download the genomes
     if genomes_for_download:
