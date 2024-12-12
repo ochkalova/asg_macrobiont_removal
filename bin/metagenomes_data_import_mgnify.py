@@ -6,7 +6,6 @@ import os
 import urllib
 
 import requests
-from lxml import etree
 from retry import retry
 
 ASG_API_URL = "https://portal.aquaticsymbiosisgenomics.org/api/data_portal_test"
@@ -57,25 +56,26 @@ def collect_data_from_asg_portal():
     return data
 
 def parse_records(data):
-    """Parse collected records to extract relevant genome information."""
-    results = {}
+    """Parse collected records to create host_genome-to-primary_assembly mapping."""
+    host2metagenome = {}
     
     for i, record in enumerate(data):
         logging.debug(f"Parsing record {i + 1}/{len(data)}")
         source_record = record.get("_source", {})
         
         if source_record.get("assemblies") and source_record.get("metagenomes_analyses"):
-            analyses_ids = collect_analyses_ids(source_record)
-            results.update(analyses_ids)
+            host_assemblies = [
+                assembly["accession"] 
+                for assembly in source_record["assemblies"]]
+            primary_metagenomes = tuple([
+                analysis["analysis_accession"] 
+                for analysis in source_record["metagenomes_analyses"] 
+                if analysis["assembly_type"] == "primary metagenome"
+                ])
+            host2metagenome[primary_metagenomes] = host_assemblies
     
-    logging.info(f"Parsed {len(results)} genome sets from the records")
-    return results
-
-def collect_analyses_ids(record):
-    """Collect analysis IDs (ERZs) from a single record."""
-    host_assemblies = [assembly["accession"] for assembly in record["assemblies"]]
-    primary_metagenomes = [analysis["analysis_accession"] for analysis in record["metagenomes_analyses"] if analysis["assembly_type"] == "primary metagenome"]
-    return {tuple(primary_metagenomes): host_assemblies}
+    logging.info(f"Parsed {len(host2metagenome)} genome sets from the records")
+    return host2metagenome
 
 def handle_fasta_download(accessions):
     if not os.path.exists(DOWNLOAD_DIR):
