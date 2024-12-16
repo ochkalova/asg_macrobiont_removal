@@ -3,7 +3,7 @@ include { ASSEMBLY_QC } from "../subworkflows/assembly_qc/main.nf"
 
 workflow PIPELINE {
 
-    input_accessions_ch = Channel.fromPath(params.input_accession).splitCsv()
+    input_accessions_ch = Channel.fromPath(params.input_file).splitCsv()
     
     HOST_DECONTAMINATION(input_accessions_ch)
     

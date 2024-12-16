@@ -4,10 +4,10 @@ include { DOWNLOAD_ERZ } from '../../modules/local/download_erz/main'
 
 workflow HOST_DECONTAMINATION {
     take:
-    assembly                    // [ val(accession) ]
+    metagenome_accession  // [ val(accession)]
 
     main:
-    FIND_ROOT_GENOME(assembly)
+    FIND_ROOT_GENOME(metagenome_accession)
 
     FIND_ROOT_GENOME.out.root_organism_fasta
         .map { filepath ->
@@ -15,7 +15,7 @@ workflow HOST_DECONTAMINATION {
         }
         .set { reference }
 
-    DOWNLOAD_ERZ(assembly)
+    DOWNLOAD_ERZ(metagenome_accession)
 
     DOWNLOAD_ERZ.out.metagenome
         .map{ accession, fasta ->
