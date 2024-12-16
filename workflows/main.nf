@@ -3,7 +3,9 @@ include { ASSEMBLY_QC } from "../subworkflows/assembly_qc/main.nf"
 
 workflow PIPELINE {
 
-    HOST_DECONTAMINATION([[id: params.input_accession], params.input_fasta])
+    input_accessions_ch = Channel.fromPath(params.input_accession).splitCsv()
+    
+    HOST_DECONTAMINATION(input_accessions_ch)
     
     // ASSEMBLY_QC(
     //         [[id: params.input_accession], params.input_fasta],
