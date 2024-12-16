@@ -6,12 +6,12 @@ process FIND_ROOT_GENOME {
     tuple val(meta), path(assembly_fasta)
 
     output:
-    path('combined_haplotype_genome.fa'), emit: root_organism_fasta
+    path('combined_haplotype_genome.fa.gz'), emit: root_organism_fasta
 
     script:
     """
     metagenomes_data_import_mgnify.py ${meta.id}
 
-    cat *.fa.gz > combined_haplotype_genome.fa
+    cat *.fa.gz > combined_haplotype_genome.fa.gz
     """
 }
