@@ -7,7 +7,7 @@ workflow PIPELINE {
     
     ASSEMBLY_QC(
             [[id: params.input_accession], params.input_fasta],
-            [[id: "asg"], params.host_reference_genome]
+            [params.host_reference_genome]
             )
 
 }
