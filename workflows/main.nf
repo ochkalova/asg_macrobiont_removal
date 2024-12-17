@@ -7,9 +7,9 @@ workflow PIPELINE {
     
     HOST_DECONTAMINATION(input_accessions_ch)
     
-    // ASSEMBLY_QC(
-    //         [[id: params.input_accession], params.input_fasta],
-    //         [params.host_reference_genome]
-    //         )
+    ASSEMBLY_QC(
+            HOST_DECONTAMINATION.out.metagenomes, 
+            HOST_DECONTAMINATION.out.decontaminated_metagenomes
+            )
 
 }
