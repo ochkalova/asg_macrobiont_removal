@@ -26,5 +26,7 @@ workflow HOST_DECONTAMINATION {
     MINIMAP2_ALIGN(metagenome, reference, "asg","fasta", true, false, false, false )
 
     emit:
+    metagenomes = metagenome
     decontaminated_metagenomes = MINIMAP2_ALIGN.out.filtered_output
+
 }
