@@ -79,7 +79,7 @@ workflow ASSEMBLY_QC {
     BLAST_BLASTN_HOST.out.txt.view()
 
     SEQKIT_GREP_HOST(
-        BLAST_BLASTN_HOST.out.txt
+        assembly.join(BLAST_BLASTN_HOST.out.txt)
     )
 
         // cleaned_contigs = SEQKIT_GREP_HOST.out.filter
