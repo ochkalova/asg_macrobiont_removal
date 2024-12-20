@@ -5,19 +5,19 @@ include { SEQKIT_GREP as SEQKIT_GREP_HUMAN_PHIX   } from '../../modules/nf-core/
 include { SEQKIT_GREP as SEQKIT_GREP_HOST         } from '../../modules/nf-core/seqkit/grep/main'
 include { SEQKIT_SEQ                              } from '../../modules/nf-core/seqkit/seq/main'
 
-process PUBLISH_CLEANED_CONTIGS {
+// process PUBLISH_CLEANED_CONTIGS {
 
-    input:
-    tuple val(meta), path(cleaned_contigs)
+//     input:
+//     tuple val(meta), path(cleaned_contigs)
 
-    output:
-    tuple val(meta), path("${meta.id}_cleaned.contigs.fa.gz")
+//     output:
+//     tuple val(meta), path("${meta.id}_cleaned.contigs.fa.gz")
 
-    script:
-    """
-    cp ${cleaned_contigs} ${meta.id}_cleaned.contigs.fa.gz
-    """
-}
+//     script:
+//     """
+//     cp ${cleaned_contigs} ${meta.id}_cleaned.contigs.fa.gz
+//     """
+// }
 
 workflow ASSEMBLY_QC {
 
@@ -75,8 +75,6 @@ workflow ASSEMBLY_QC {
     )
 
         // ch_versions = ch_versions.mix(BLAST_BLASTN_HOST.out.versions.first())
-
-    BLAST_BLASTN_HOST.out.txt.view()
 
     SEQKIT_GREP_HOST(
         assembly.join(BLAST_BLASTN_HOST.out.txt)
