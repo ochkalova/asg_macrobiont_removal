@@ -9,7 +9,7 @@ workflow PIPELINE {
     
     ASSEMBLY_QC(
             HOST_DECONTAMINATION.out.metagenomes, 
-            HOST_DECONTAMINATION.out.decontaminated_metagenomes
+            HOST_DECONTAMINATION.out.references
             )
 
 }
