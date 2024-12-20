@@ -11,7 +11,7 @@ workflow HOST_DECONTAMINATION {
 
     FIND_ROOT_GENOME.out.root_organism_fasta
         .map { filepath ->
-            [[id: filepath.getBaseName(2)], filepath]
+            [[id: filepath.getBaseName(3)], filepath]
         }
         .set { reference }
 
