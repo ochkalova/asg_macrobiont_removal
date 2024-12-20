@@ -13,6 +13,14 @@ process FIND_ROOT_GENOME {
     """
     metagenomes_data_import_mgnify.py ${accession}
 
-    cat *.fa.gz > combined_haplotype_genome.fa.gz
+    # List all *.fa.gz files
+    input_files=\$(ls *.fa.gz)
+
+    # Create a combined filename by removing '.fa.gz' and joining with underscores
+    output_file=$(echo \$input_files | sed 's/\.fa\.gz//g' | tr ' ' '_' | sed 's/_$//').fa.gz
+
+    # Concatenate the input files into the output file
+    cat \$input_files > \$output_file
+
     """
 }
