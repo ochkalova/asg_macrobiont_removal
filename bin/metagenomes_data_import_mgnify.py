@@ -27,12 +27,13 @@ def main(target_accession):
     # Parse the collected data and collect relevant genome IDs
     host2metagenome = parse_records(data)
     
+    logging.info(f"Fetching root organism assemblies for metagenome: {target_accession}")
     # Find genomes related to the target accession
     genomes_for_download = host2metagenome[(target_accession,)]
     
     # Download the genomes
     if genomes_for_download:
-        logging.info(f"Found {len(genomes_for_download)} genomes to download")
+        logging.info(f"Found {len(genomes_for_download)} genomes to download: {','.join(genomes_for_download)}")
         handle_fasta_download(genomes_for_download)
     else:
         logging.warning(f"No genomes found for target accession {target_accession}")
