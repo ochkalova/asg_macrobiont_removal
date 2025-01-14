@@ -7,7 +7,7 @@ process FIND_ROOT_GENOME {
     tuple val(accession)
 
     output:
-    path('*.2haps.fa.gz'), emit: root_organism_fasta
+    tuple val(accession), path('*.2haps.fa.gz'), emit: root_organism_fasta
 
     script:
     """

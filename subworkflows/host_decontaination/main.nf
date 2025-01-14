@@ -9,25 +9,21 @@ workflow HOST_DECONTAMINATION {
     main:
     FIND_ROOT_GENOME(metagenome_accession)
 
-    FIND_ROOT_GENOME.out.root_organism_fasta
-        .map { filepath ->
-            [[id: filepath.getBaseName(3)], filepath]
-        }
-        .set { reference }
-
     DOWNLOAD_ERZ(metagenome_accession)
 
     DOWNLOAD_ERZ.out.metagenome
-        .map{ accession, fasta ->
-            [[id: accession], fasta]
+        .join(FIND_ROOT_GENOME.out.root_organism_fasta)
+        .multiMap { metagenome_id, metagenome_file, root_org_file ->
+            metagenome: [metagenome_id, metagenome_file]
+            reference: [root_org_file.getBaseName(3), root_org_file]
         }
-        .set { metagenome }
+        .set { for_alignment_ch }
 
-    MINIMAP2_ALIGN(metagenome, reference, "asg", "fasta", true, false, false, false )
+    MINIMAP2_ALIGN(for_alignment_ch.metagenome, for_alignment_ch.reference, "asg", "fasta", true, false, false, false )
 
     emit:
-    metagenomes = metagenome
-    references = reference
+    metagenomes = for_alignment_ch.metagenome
+    references = for_alignment_ch.reference
     decontaminated_metagenomes = MINIMAP2_ALIGN.out.filtered_output
 
 }
