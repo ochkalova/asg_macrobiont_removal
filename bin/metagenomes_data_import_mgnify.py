@@ -3,7 +3,6 @@
 import argparse
 import logging
 import os
-import urllib
 
 import requests
 from retry import retry
@@ -97,7 +96,7 @@ def download_from_ENA_API(accession: str, outpath: str) -> str:
         'download': 'true',
         'gzip': 'true'
     }
-    response = requests.get(api_endpoint, params=urllib.parse.urlencode(query))
+    response = requests.get(api_endpoint, params=query)
     response.raise_for_status()
     
     with open(outpath, 'wb') as out:
