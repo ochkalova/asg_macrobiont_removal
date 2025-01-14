@@ -14,8 +14,8 @@ workflow HOST_DECONTAMINATION {
     DOWNLOAD_ERZ.out.metagenome
         .join(FIND_ROOT_GENOME.out.root_organism_fasta)
         .multiMap { metagenome_id, metagenome_file, root_org_file ->
-            metagenome: [metagenome_id, metagenome_file]
-            reference: [root_org_file.getBaseName(3), root_org_file]
+            metagenome: [[id: metagenome_id], metagenome_file]
+            reference: [[id: root_org_file.getBaseName(3)], root_org_file]
         }
         .set { for_alignment_ch }
 
