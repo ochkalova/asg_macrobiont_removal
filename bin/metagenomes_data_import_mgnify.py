@@ -66,7 +66,7 @@ def parse_records(data):
         if source_record.get("assemblies") and source_record.get("metagenomes_analyses"):
             host_assemblies = [
                 assembly["accession"] 
-                for assembly in source_record["assemblies"]]
+                for assembly in source_record["assemblies"] if not "alternate" in assembly["assembly_name"]]
             primary_metagenomes = tuple([
                 analysis["analysis_accession"] 
                 for analysis in source_record["metagenomes_analyses"] 
