@@ -1,5 +1,5 @@
 process BLAST_BLASTN {
-    tag "$meta.id-$meta2.id"
+    tag "$meta.id"
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
