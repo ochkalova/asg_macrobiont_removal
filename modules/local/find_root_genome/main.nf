@@ -7,20 +7,11 @@ process FIND_ROOT_GENOME {
     tuple val(accession)
 
     output:
-    tuple val(accession), path('*.2haps.fa.gz'), emit: root_organism_fasta
+    tuple val(accession), path('*.fa.gz'), emit: root_organism_fasta
 
     script:
     """
     metagenomes_data_import_mgnify.py ${accession}
-
-    # List all *.fa.gz files
-    input_files=\$(ls *.fa.gz)
-
-    # Create a combined filename by removing '.fa.gz' and joining with underscores
-    output_file=\$(echo \$input_files | sed 's/\\.fa\\.gz//g' | tr ' ' '_' | sed 's/_\$//').2haps.fa.gz
-
-    # Concatenate the input files into the output file
-    cat \$input_files > \$output_file
 
     """
 }
