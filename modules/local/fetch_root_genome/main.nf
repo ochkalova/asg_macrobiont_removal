@@ -1,4 +1,4 @@
-process FIND_ROOT_GENOME {
+process FETCH_ROOT_GENOME {
     tag "$accession"
     label 'process_single'
     container 'community.wave.seqera.io/library/pip_requests_retry:be391101dc2ee5f0'
@@ -11,7 +11,7 @@ process FIND_ROOT_GENOME {
 
     script:
     """
-    fetch_macro_organism_assembly_from_asg_portal.py ${accession}
+    fetch_root_genome_from_asg_portal.py ${accession}
 
     """
 }
