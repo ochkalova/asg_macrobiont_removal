@@ -11,6 +11,6 @@ process DOWNLOAD_ERZ {
 
     script:
     """
-    download_erz.py ${accession}
+    download_primary_metagenome_assembly.py ${accession}
     """
 }
