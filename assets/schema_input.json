@@ -10,8 +10,7 @@
             "metagenome_id": {
                 "type": "string",
                 "pattern": "^\\S+$",
-                "errorMessage": "Metagenome accession must be provided and cannot contain spaces",
-                "meta": ["id"]
+                "errorMessage": "Metagenome accession must be provided and cannot contain spaces"
             },
             "metagenome_fasta": {
                 "type": "string",
@@ -23,17 +22,16 @@
             "filtered_genome_id": {
                 "type": "string",
                 "pattern": "^\\S+$",
-                "errorMessage": "Filtered genome accession must be provided and cannot contain spaces",
-                "meta": ["id"]
+                "errorMessage": "Filtered genome accession must be provided and cannot contain spaces"
             },
             "filtered_genome_fasta": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.(fa|fasta|faa|fas)(\\.gz)?$",
-                "description": "Fasta file for predicted proteins, cannot contain spaces and must have extension '.fa', '.fasta', '.faa', '.fas', '.fa.gz', '.fasta.gz', '.faa.gz' or '.fas.gz'"
+                "pattern": "^\\S+\\.(fna|fasta|fa)(\\.gz)?$",
+                "description": "Fasta file for assembly, cannot contain spaces and must have extension '.fna', '.fasta', '.fa', '.fna.gz', '.fasta.gz' or '.fa.gz'"
             }
         },
-        "required": ["sample", "contigs", "proteins"]
+        "required": ["metagenome_id", "filtered_genome_id"]
     }
 }
