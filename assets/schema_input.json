@@ -27,7 +27,6 @@
             "filtered_genome_fasta": {
                 "type": "string",
                 "format": "file-path",
-                "exists": true,
                 "pattern": "^\\S+\\.(fna|fasta|fa)(\\.gz)?$",
                 "description": "Fasta file for assembly, cannot contain spaces and must have extension '.fna', '.fasta', '.fa', '.fna.gz', '.fasta.gz' or '.fa.gz'"
             }
