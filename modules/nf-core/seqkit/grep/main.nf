@@ -24,9 +24,7 @@ process SEQKIT_GREP {
     def suffix = task.ext.suffix ?: "${sequence}" ==~ /(.*f[astn]*a(.gz)?$)/ ? "fa" : "fq"
     def pattern_file = pattern ? "-f ${pattern}" : ""
 
-    def pattern_filename = pattern.getName()
-    def pattern_name = pattern_filename.split('\\.')[0]
-    def prefix = task.ext.prefix ?: "${meta.id}_${pattern_name}"
+    def prefix = task.ext.prefix ?: "${meta.id}_filtered"
 
     """
     seqkit \\
