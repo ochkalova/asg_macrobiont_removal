@@ -1,0 +1,6 @@
+.nextflow*
+/work/
+/results/
+*.log
+bin/example_data
+data
