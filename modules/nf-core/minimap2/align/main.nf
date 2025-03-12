@@ -11,15 +11,12 @@ process MINIMAP2_ALIGN {
     input:
     tuple val(meta), path(reads)
     tuple val(meta2), path(reference)
-    val prefix2
-    val fa_fq_format
     val bam_format
     val bam_index_extension
     val cigar_paf_format
     val cigar_bam
 
     output:
-    tuple val(meta), path("*.minimap*")                  , optional: true, emit: filtered_output
     tuple val(meta), path("*.paf")                       , optional: true, emit: paf
     tuple val(meta), path("*.bam")                       , optional: true, emit: bam
     tuple val(meta), path("*.bam.${bam_index_extension}"), optional: true, emit: index
@@ -35,17 +32,13 @@ process MINIMAP2_ALIGN {
     def args4 = task.ext.args4 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def bam_index = bam_index_extension ? "${prefix}.bam##idx##${prefix}.bam.${bam_index_extension} --write-index" : "${prefix}.bam"
-    def bam_output = bam_format ? "-a | samtools ${fa_fq_format} -f 4 | gzip > ${prefix}.${prefix2}.minimap.${fa_fq_format}.gz" : "-o ${prefix}.paf"
-    def bam_real_output = fa_fq_format.matches('bam') ? "-a | samtools sort -@ ${task.cpus-1} -o ${bam_index} ${args2}" : ""
+    def bam_output = bam_format ? "-a | samtools sort -@ ${task.cpus-1} -o ${bam_index} ${args2}" : "-o ${prefix}.paf"
     def cigar_paf = cigar_paf_format && !bam_format ? "-c" : ''
     def set_cigar_bam = cigar_bam && bam_format ? "-L" : ''
     def bam_input = "${reads.extension}".matches('sam|bam|cram')
-    def samtools_reset_fastq = bam_input ? "samtools reset --threads ${task.cpus-1} $args3 $reads | samtools ${fa_fq_format} --threads ${task.cpus-1} $args4 |" : ''
+    def samtools_reset_fastq = bam_input ? "samtools reset --threads ${task.cpus-1} $args3 $reads | samtools fastq --threads ${task.cpus-1} $args4 |" : ''
     def query = bam_input ? "-" : reads
     def target = reference ?: (bam_input ? error("BAM input requires reference") : reads)
-    
-    if(bam_real_output != "")
-        bam_output = bam_real_output
 
     """
     $samtools_reset_fastq \\
@@ -57,6 +50,7 @@ process MINIMAP2_ALIGN {
         $cigar_paf \\
         $set_cigar_bam \\
         $bam_output
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
