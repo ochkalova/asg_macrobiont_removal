@@ -24,7 +24,7 @@ workflow HOST_DECONTAMINATION {
     MINIMAP2_ALIGN(
         for_alignment_ch.metagenome, 
         for_alignment_ch.reference, 
-        true, 
+        false, 
         false, 
         false, 
         false)
