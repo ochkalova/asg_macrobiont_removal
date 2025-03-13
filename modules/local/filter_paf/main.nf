@@ -9,6 +9,6 @@ process FILTER_PAF {
 
     script:
     """
-    awk '((\$4 - \$3) / \$2) > 0.2 && \$12 > 20' ${paf_file} | cut -f 1 > ${meta.id}.txt
+    awk '((\$4 - \$3) / \$2) > ${params.min_qcov} && \$12 > ${params.min_mapq}' ${paf_file} | cut -f 1 > ${meta.id}.txt
     """
 }
